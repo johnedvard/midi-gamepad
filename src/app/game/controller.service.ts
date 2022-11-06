@@ -1,20 +1,44 @@
 import { Injectable } from '@angular/core';
-import { gamepadAxis, onGamepad } from 'kontra';
+import { gamepadAxis, gamepadMap, onGamepad } from '../shared/kontra';
 import { Axis } from '../shared/axis';
+import { Observable, Subject } from 'rxjs';
+import { ControllerEvent } from '../types/ControllerEvent';
+import { offGamepad } from 'kontra';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ControllerService {
+  gamepadKeys: string[] = [
+    'south',
+    'east',
+    'west',
+    'north',
+    'leftshoulder',
+    'rightshoulder',
+    'lefttrigger',
+    'righttrigger',
+    'select',
+    'start',
+    'leftstick',
+    'rightstick',
+    'dpadup',
+    'dpaddown',
+    'dpadleft',
+    'dpadright',
+  ];
+  controllerEvents$: Subject<ControllerEvent>;
   constructor() {
-    this.listenForControllerEvents();
+    console.log('init');
+    this.controllerEvents$ = new Subject();
   }
 
   /**
    * One shot events such as button clikcs
    */
-  listenForControllerEvents() {
-    onGamepad('south', this.onSouth);
+  listenForControllerEvents(): Observable<any> {
+    onGamepad(this.gamepadKeys, this.onGamePadClick);
+    return this.controllerEvents$.asObservable();
   }
 
   /**
@@ -30,6 +54,18 @@ export class ControllerService {
     return { leftAxis, rightAxis };
   }
 
-  removeEventListeners() {}
-  onSouth = () => {};
+  removeEventListeners() {
+    offGamepad(this.gamepadKeys);
+  }
+  onGamePadClick = (
+    gamepad: Gamepad,
+    button: GamepadButton,
+    { buttonName }: { buttonName: string }
+  ) => {
+    this.controllerEvents$?.next({
+      gamepad,
+      button,
+      gamepadExtras: { buttonName },
+    });
+  };
 }

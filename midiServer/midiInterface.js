@@ -4,6 +4,25 @@ let input;
 let output;
 let leftThumbstick = { x: 0, y: 0 };
 let rightThumbstick = { x: 0, y: 0 };
+const gamepadMap = {
+  south: 0,
+  east: 1,
+  west: 2,
+  north: 3,
+  leftshoulder: 4,
+  rightshoulder: 5,
+  lefttrigger: 6,
+  righttrigger: 7,
+  select: 8,
+  start: 9,
+  leftstick: 10,
+  rightstick: 11,
+  dpadup: 12,
+  dpaddown: 13,
+  dpadleft: 14,
+  dpadright: 15,
+};
+
 const MAX_VOLUME = 127;
 const MIN_VOLUME = 0;
 
@@ -21,7 +40,7 @@ const createMidiInterface = () => {
   input.openVirtualPort("Gamepad Input");
 };
 
-const getControlerNumber = ({ thumbstick, axisKey }) => {
+const getControlerNumber = ({ thumbstick, axisKey, buttonName }) => {
   if (thumbstick === leftThumbstick) {
     if (axisKey === "x") return 1;
     return 2;
@@ -30,6 +49,15 @@ const getControlerNumber = ({ thumbstick, axisKey }) => {
     if (axisKey === "x") return 3;
     return 4;
   }
+  if (buttonName) return gamepadMap[buttonName];
+};
+
+const sendButtonMessage = (msg) => {
+  output.sendMessage([
+    177,
+    getControlerNumber({ buttonName: msg?.data?.gamepadExtras?.buttonName }),
+    1,
+  ]);
 };
 
 const sendThumbstickMessage = (msg) => {
@@ -63,7 +91,8 @@ const sendThumbstickMessage = (msg) => {
 const sendMidiMessage = (rawData) => {
   const msg = JSON.parse(rawData);
   if (!output) return;
-  sendThumbstickMessage(msg);
+  if (msg.name.match("Axis")) return sendThumbstickMessage(msg);
+  if (msg.name.match("button-")) return sendButtonMessage(msg);
 };
 
 exports.createMidiInterface = createMidiInterface;

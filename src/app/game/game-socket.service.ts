@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Axis } from '../shared/axis';
+import { ControllerEvent } from '../types/ControllerEvent';
 
 const THRESHOLD = 0.25;
 @Injectable({
@@ -25,7 +26,6 @@ export class GameSocketService {
   }
 
   sendAxis(axis: Axis) {
-    console.log('send axis', axis);
     if (Math.abs(axis.leftAxis.x) > THRESHOLD) {
       const axisData = { name: 'leftAxisX', data: { x: axis.leftAxis.x } };
       this.socket.send(JSON.stringify(axisData));
@@ -47,5 +47,13 @@ export class GameSocketService {
       this.socket.send(JSON.stringify(axisData));
     }
     this.prevAxis = axis; // NB! changing reference
+  }
+
+  sendButtonClick(controllerEvent: ControllerEvent) {
+    const controllerData = {
+      name: 'button-' + controllerEvent.gamepadExtras.buttonName,
+      data: controllerEvent,
+    };
+    this.socket.send(JSON.stringify(controllerData));
   }
 }
